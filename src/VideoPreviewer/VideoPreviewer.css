@@ -1,0 +1,38 @@
+:root {
+  main-height: 350px;
+}
+
+.videoContainer {
+  width: 100%;
+  background-color: #1e1e3d;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.videoViewer {
+  flex: 1;
+  height: --main-height;
+}
+
+.viewerToolbar {
+  width: 75px;
+  height: --main-height;
+}
+.videoToolbar {
+  width: 100%;
+  height: 60px;
+  display: inherit;
+}
+
+.videoOperateButton {
+  width: 80px;
+}
+
+.videoProgressBar {
+  flex: 1;
+  overflow: scroll;
+}
+
+.frameRate {
+  width: 75px;
+}
