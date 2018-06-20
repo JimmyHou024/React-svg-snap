@@ -23,8 +23,6 @@ export default class Canvas extends React.Component {
   state = {
     x: this.props.canvasModel.x,
     y: this.props.canvasModel.y,
-    // snapX: this.props.canvasModel.x,
-    // snapY: this.props.canvasModel.y,
     snapXOffset: 0,
     snapYOffset: 0,
     isSnapX: false,
@@ -49,7 +47,7 @@ export default class Canvas extends React.Component {
         if (
           Math.abs(
             binarySearch(otherX, point.x, 0, otherX.length - 1) - point.x
-          ) < acc.xOffset
+          ) < Math.abs(acc.xOffset)
         ) {
           return {
             x: point.x,
@@ -62,6 +60,8 @@ export default class Canvas extends React.Component {
       { x: Number.MAX_SAFE_INTEGER, xOffset: Number.MAX_SAFE_INTEGER }
     );
 
+    console.log(closestPointX);
+
     if (Math.abs(closestPointX.xOffset) <= SNAP_GAP) {
       newIsSnapX = true;
       newSnapXOffset = closestPointX;
@@ -72,7 +72,7 @@ export default class Canvas extends React.Component {
         if (
           Math.abs(
             binarySearch(otherY, point.y, 0, otherY.length - 1) - point.y
-          ) < acc.yOffset
+          ) < Math.abs(acc.yOffset)
         ) {
           return {
             y: point.y,
@@ -89,44 +89,6 @@ export default class Canvas extends React.Component {
       newIsSnapY = true;
       newSnapYOffset = closestPointY;
     }
-    // const pointsX = canvasModel.innerPoints.map(point => {
-    //   return (
-    //     binarySearch(otherX.sort(), point.x, 0, otherX.length - 1) -
-    //     (point.x + dragData.deltaX)
-    //   );
-    // });
-    // let closestPointX = binarySearch(pointsX.sort(), 0, 0, pointsX.length - 1);
-    // // console.log(pointsX, closestPointX);
-    // if (Math.abs(closestPointX) <= SNAP_GAP) {
-    //   newIsSnapX = true;
-    //   newSnapXOffset = closestPointX;
-    // }
-
-    // const pointsY = canvasModel.innerPoints.map(point => {
-    //   return (
-    //     binarySearch(otherY, point.y, 0, otherY.length - 1) -
-    //     (point.y + dragData.deltaY)
-    //   );
-    // });
-    // let closestPointY = binarySearch(pointsY.sort(), 0, 0, pointsY.length - 1);
-    // // console.log(pointsY, closestPointY);
-    // if (Math.abs(closestPointY) <= SNAP_GAP) {
-    //   newIsSnapY = true;
-    //   newSnapYOffset = closestPointY;
-    // }
-
-    // let closestPointX = binarySearch(otherX, newX, 0, otherX.length - 1);
-    // if (closestPointX + SNAP_GAP >= newX && closestPointX - SNAP_GAP <= newX) {
-    //   newIsSnapX = true;
-    //   newSnapXOffset = closestPointX - newX;
-    // }
-
-    // let closestPointY = binarySearch(otherY, newY, 0, otherY.length - 1);
-    // if (closestPointY + SNAP_GAP >= newY && closestPointY - SNAP_GAP <= newY) {
-    //   newIsSnapY = true;
-    //   newSnapYOffset = closestPointY - newY;
-    // }
-
     this.setState({
       isSnapX: newIsSnapX,
       isSnapY: newIsSnapY,
@@ -134,8 +96,6 @@ export default class Canvas extends React.Component {
       snapYOffset: newSnapYOffset,
       x: newX,
       y: newY
-      // snapX: closestPointX,
-      // snapY: closestPointY
     });
   };
 

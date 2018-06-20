@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
 import CanvasEditor from "./CanvasEditor/CanvasEditor";
-import CE from "./CE2/CE";
 import VideoPreviewer from "./VideoPreviewer/VideoPreviewer.js";
 
 const styles = {
