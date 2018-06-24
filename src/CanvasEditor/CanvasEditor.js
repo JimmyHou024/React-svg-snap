@@ -4,13 +4,13 @@ import CanvasModel from "./CanvasModel";
 
 export default class CanvasEditor extends React.Component {
   state = {
-    // canvases: Array.from(new Array(10)).map(
-    //   (cell, index) => new CanvasModel(index)
-    // )
-    canvases: [
-      new CanvasModel(1, 87.8, 50.4, 0),
-      new CanvasModel(2, 87.8, 50.4, 45)
-    ]
+    canvases: Array.from(new Array(10)).map(
+      (cell, index) => new CanvasModel(index)
+    )
+    // canvases: [
+    //   new CanvasModel(1, 87.8, 50.4, 0),
+    //   new CanvasModel(2, 87.8, 50.4, 45)
+    // ]
   };
   onDragEnd = (id, x, y) => {
     const canvasModel = this.state.canvases.find(c => c.id === id);
