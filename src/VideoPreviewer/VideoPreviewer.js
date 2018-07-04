@@ -3,69 +3,81 @@ import { DraggableCore } from "react-draggable";
 import videoList from "./videoDataSet";
 import "./VideoPreviewer.css";
 
-const totalDuration = videoList.reduce(
-  (total, v) => (total = v.length + total),
-  0
-);
-
 const VIDEO_WIDTH = 600;
 const MEDIA_TYPE = {
   IMAGE: "i",
   VIDEO: "v"
 };
 
-class Timer {
-  constructor(func, cb, interval) {
-    this.cb = cb;
-    this.func = func;
-    this.nowTick = 1;
+class ImgPlayer {
+  constructor(ontimeupdate, onended, interval) {
+    this.onended = onended;
+    this.ontimeupdate = ontimeupdate;
+    this.currentTime = 0;
     this.interval = interval;
     this.id = 0;
   }
 
   play = () => {
+    console.log(this.currentTime);
     this.id = setInterval(() => {
-      if (this.nowTick === this.interval) {
+      if (this.currentTime / 10 === this.interval) {
         clearInterval(this.id);
-        this.cb();
+        this.onended();
       } else {
-        this.func();
+        this.ontimeupdate(this.currentTime / 10);
+        this.currentTime += 1;
       }
-      console.log(this.nowTick);
-      this.nowTick += 1;
-    }, 1000);
-
-    console.log(this.id);
+    }, 100);
   };
 
   pause = () => {
-    console.log(this.id);
     clearInterval(this.id);
+  };
+
+  reset = (currentTime, interval = this.interval) => {
+    this.pause();
+    this.currentTime = currentTime * 10;
+    this.interval = interval;
+    this.play();
   };
 }
 
 export default class VideoPreviewer extends React.Component {
-  state = {
-    isMovingProgress: false,
-    nowPlayIndex: 0,
-    isPlaying: false,
-    remains: 0,
-    totalRemains: 0
-  };
+  constructor(props) {
+    super(props);
+    // 計算影片總播放時間
+    const totalDuration = this.props.mediaList.reduce(
+      (total, v) => (total += v.length),
+      0
+    );
+
+    // 建立圖片播放器
+    this.ImgPlayer = new ImgPlayer(
+      nowTick => this.ontimeupdate(nowTick),
+      this.onended,
+      0
+    );
+
+    this.state = {
+      totalDuration,
+      isMovingProgress: false,
+      nowPlayIndex: 0,
+      isPlaying: false
+      // remains: 0,
+      // totalRemains: 0
+    };
+  }
 
   nowPlayIndex = 0;
 
   componentDidMount() {
-    const mediaDom =
-      videoList[0].type === MEDIA_TYPE.IMAGE ? this.imgDom : this.videoDom;
+    if (videoList.length <= 0) return;
 
-    if (videoList.length) {
-      mediaDom.setAttribute("src", videoList[0].sources);
-      mediaDom.style.display = "block";
-      // videoDom.play();
-    }
     this.addVideoEventListener();
     this.addImgEventListener();
+
+    this.onNextMedia(0);
   }
 
   addVideoEventListener = () => {
@@ -73,41 +85,38 @@ export default class VideoPreviewer extends React.Component {
     videoDom.onloadeddata = () => {
       videoDom.play();
     };
-
     // 監聽video 播放進度
-    videoDom.ontimeupdate = () => {
-      const duration = videoDom.duration;
-
-      if (duration > 0) {
-        const accTime =
-          videoList
-            .slice(0, this.nowPlayIndex)
-            .reduce((acc, v) => acc + v.length, 0) + videoDom.currentTime;
-        this.setVideoProgressAdjuster(accTime);
-      }
-    };
-
-    videoDom.onended = () => {
-      this.nowPlayIndex = this.nowPlayIndex + 1;
-      this.onNextMedia();
-    };
+    videoDom.ontimeupdate = () => this.ontimeupdate(videoDom.currentTime);
+    videoDom.onended = this.onended;
   };
-
-  timer = null;
 
   addImgEventListener = () => {
     const imgDom = this.imgDom;
-
     imgDom.onload = () => {
-      const accTime =
-        videoList
-          .slice(0, this.nowPlayIndex)
-          .reduce((acc, v) => acc + v.length, 0) + (imgDom.currentTime || 0);
-      this.setVideoProgressAdjuster(accTime);
+      // this.ImgPlayer.play();
+      // const accTime =
+      //   videoList
+      //     .slice(0, this.nowPlayIndex)
+      //     .reduce((acc, v) => acc + v.length, 0) + (imgDom.currentTime || 0);
+      // this.setVideoProgressAdjuster(accTime);
     };
   };
 
-  onChangeSource = (e, media, index) => {
+  ontimeupdate = currentTime => {
+    // console.log("currentTime", currentTime);
+    const accTime =
+      videoList
+        .slice(0, this.nowPlayIndex)
+        .reduce((acc, v) => acc + v.length, 0) + currentTime;
+    this.setVideoProgressAdjuster(accTime);
+  };
+
+  onended = () => {
+    this.nowPlayIndex = this.nowPlayIndex + 1;
+    this.onNextMedia(0);
+  };
+
+  onClickProgressBar = (e, media, index) => {
     // 元件距離左邊界的距離
     const offsetLeft = e.target.getBoundingClientRect().left;
     const newPlayTime = e.clientX - offsetLeft;
@@ -115,20 +124,23 @@ export default class VideoPreviewer extends React.Component {
     if (this.nowPlayIndex !== index) {
       this.nowPlayIndex = index;
     }
+    console.log("newPlayTime", newPlayTime);
     this.onNextMedia(newPlayTime);
     // 設定播放指示棒
-    const videoProgressBarDom = document.querySelector(".videoProgressBar");
-    this.setVideoProgressAdjuster(
-      e.clientX -
-        videoProgressBarDom.getBoundingClientRect().left +
-        videoProgressBarDom.scrollLeft
-    );
+    // const videoProgressBarDom = document.querySelector(".videoProgressBar");
+    // this.setVideoProgressAdjuster(
+    //   e.clientX -
+    //     videoProgressBarDom.getBoundingClientRect().left +
+    //     videoProgressBarDom.scrollLeft
+    // );
   };
 
   onNextMedia = currentTime => {
+    if (this.nowPlayIndex >= videoList.length) return;
     const media = videoList[this.nowPlayIndex];
 
     if (media.type === MEDIA_TYPE.VIDEO) {
+      this.ImgPlayer.pause();
       this.videoDom.style.display = "block";
       this.imgDom.style.display = "none";
       this.videoDom.setAttribute(
@@ -142,7 +154,10 @@ export default class VideoPreviewer extends React.Component {
       this.videoDom.style.display = "none";
       this.imgDom.style.display = "block";
       this.imgDom.setAttribute("src", videoList[this.nowPlayIndex].sources[0]);
-      this.imgDom.currentTime = currentTime;
+      // this.ImgPlayer.pause();
+      console.log("onNextMedia", currentTime);
+      this.ImgPlayer.reset(currentTime, media.length);
+      // this.ImgPlayer.play();
     }
   };
 
@@ -162,6 +177,7 @@ export default class VideoPreviewer extends React.Component {
       accumulatedLength += video.length;
       return (
         <rect
+          key={video.title}
           x={accumulatedLength - video.length}
           y="2.5"
           rx="5"
@@ -169,7 +185,7 @@ export default class VideoPreviewer extends React.Component {
           width={video.length}
           height="35"
           stroke="red"
-          onClick={e => this.onChangeSource(e, video, index)}
+          onClick={e => this.onClickProgressBar(e, video, index)}
           data-media={video}
         />
       );
@@ -181,17 +197,13 @@ export default class VideoPreviewer extends React.Component {
    */
   togglePlay = () => {
     const { isPlaying } = this.state;
+    const media = videoList[this.nowPlayIndex];
 
-    if (!this.timer) {
-      this.timer = new Timer(() => {
-        console.log("down");
-      }, 10);
+    if (media.type === MEDIA_TYPE.VIDEO) {
+      this.state.isPlaying ? this.videoDom.pause() : this.videoDom.play();
+    } else if (media.type === MEDIA_TYPE.IMAGE) {
+      this.state.isPlaying ? this.ImgPlayer.pause() : this.ImgPlayer.play();
     }
-
-    if (isPlaying) this.videoDom.pause();
-    if (!isPlaying) this.videoDom.play();
-    // if (isPlaying) this.timer.pause();
-    // if (!isPlaying) this.timer.play();
 
     this.setState({
       isPlaying: !isPlaying
@@ -219,8 +231,7 @@ export default class VideoPreviewer extends React.Component {
                   <source src="" type="video/mp4" />
                 </video>
                 <img
-                  src
-                  alt
+                  alt=""
                   width={VIDEO_WIDTH}
                   height="400"
                   style={{ display: "none" }}
@@ -241,7 +252,7 @@ export default class VideoPreviewer extends React.Component {
           </div>
           <div className="videoProgressBar">
             <svg
-              width={totalDuration}
+              width={this.state.totalDuration}
               height="40"
               style={{
                 minWidth: "100%",
@@ -256,7 +267,7 @@ export default class VideoPreviewer extends React.Component {
                   onStart={() => {
                     this.setState({ isMovingProgress: true });
                   }}
-                  // onDrag={this.onDragProgressBar}
+                  onDrag={this.onDragProgressBar}
                   onStop={() => {
                     this.setState({ isMovingProgress: false });
                   }}
@@ -289,177 +300,3 @@ export default class VideoPreviewer extends React.Component {
     );
   }
 }
-
-// componentDidMount() {
-//   const videoDom = this.videoDom;
-//   const videoToolBarDom = document.querySelector(".videoToolBar");
-//   videoDom.onprogress = () => {
-//     const duration = videoDom.duration;
-//     // const videoToolBarDomLength = videoToolBarDom.width.baseVal.value;
-//     const videoToolBarDomLength = totalDuration;
-//     const videoDownloadDom = document.querySelector(".videoDownload");
-//     if (duration > 0) {
-//       for (let i = 0; i < videoDom.buffered.length; i++) {
-//         if (
-//           videoDom.buffered.start(videoDom.buffered.length - 1 - i) <
-//           videoDom.currentTime
-//         ) {
-//           videoDownloadDom.setAttribute(
-//             "width",
-//             `${videoDom.buffered.end(videoDom.buffered.length - 1 - i) /
-//               totalDuration *
-//               videoToolBarDomLength}px`
-//           );
-//           break;
-//         }
-//       }
-//     }
-//   };
-
-//   videoDom.ontimeupdate = () => {
-//     const duration = videoDom.duration;
-//     // const videoToolBarDomLength = videoToolBarDom.width.baseVal.value;
-//     const videoToolBarDomLength = totalDuration;
-//     const videoProgressDom = document.querySelector(".videoProgress");
-
-//     if (duration > 0) {
-//       videoProgressDom.setAttribute(
-//         "width",
-//         `${videoDom.currentTime / totalDuration * videoToolBarDomLength}px`
-//       );
-//       if (!this.state.isMovingProgress) {
-//         this.setProgressAdjusterPosition(
-//           videoDom.currentTime / duration * videoToolBarDomLength
-//         );
-//       }
-//     }
-//   };
-// }
-
-// onAdjustProgress = async (e, id) => {
-//   const videoDom = this.video;
-//   if (this.state.nowPlayIndex !== id) {
-//     videoDom.setAttribute("src", videoList[id].sources);
-//     // await this.setState(() => ({ nowPlayIndex: id }));
-//   }
-
-//   const targetPosition = e.clientX - e.target.getBoundingClientRect().left;
-//   const videoToolBarDomLength = totalDuration;
-//   videoDom.currentTime =
-//     // newVideo.duration / videoToolBarDomLength * targetPosition;
-//     totalDuration / videoToolBarDomLength * targetPosition;
-// };
-
-// onDragProgressBar = (e, dragData) => {
-//   const videoDom = this.video;
-//   const videoToolBarDomLength = document.querySelector(".videoToolBar").width
-//     .baseVal.value;
-//   let targetPosition = dragData.x - videoDom.getBoundingClientRect().left;
-//   targetPosition =
-//     targetPosition >= 0 && targetPosition <= videoToolBarDomLength
-//       ? targetPosition
-//       : targetPosition < 0 ? 0 : videoToolBarDomLength;
-
-//   this.setProgressAdjusterPosition(targetPosition);
-//   videoDom.currentTime =
-//     videoDom.duration / videoToolBarDomLength * targetPosition;
-// };
-
-// setProgressAdjusterPosition = x => {
-//   document
-//     .querySelector(".videoProgressAdjusterBall")
-//     .setAttribute("cx", x + 100);
-//   document
-//     .querySelector(".videoProgressAdjusterBar")
-//     .setAttribute("x1", x + 100);
-//   document
-//     .querySelector(".videoProgressAdjusterBar")
-//     .setAttribute("x2", x + 100);
-// };
-
-// renderProgressBar = () => {
-//   let accumulatedLength = 0;
-//   return videoList.map((video, index) => {
-//     accumulatedLength += video.length;
-//     return (
-//       <g>
-//         <rect
-//           x="100"
-//           y="420"
-//           width="0"
-//           height="20"
-//           fill="gray"
-//           className="videoDownload"
-//         />
-//         <rect
-//           x="100"
-//           y="420"
-//           width="0"
-//           height="20"
-//           fill="black"
-//           className="videoProgress"
-//         />
-//         <rect
-//           x={100 + accumulatedLength - video.length}
-//           y="420"
-//           width={video.length}
-//           height="20"
-//           fill="transparent"
-//           stroke="red"
-//           className="videoToolBar"
-//           onClick={e => this.onAdjustProgress(e, index)}
-//         />
-//       </g>
-//     );
-//   });
-// };
-
-/*
-<svg width="800" height="600" id="svg">
-  <g>
-    <foreignObject x="100" y="0" width={VIDEO_WIDTH} height="400">
-      <video
-        width={VIDEO_WIDTH}
-        height="400"
-        controls
-        ref={video => {
-          this.video = video;
-        }}
-      >
-        <source src="" type="video/mp4" />
-      </video>
-    </foreignObject>
-    <g>{this.renderProgressBar()}</g>
-    <g>
-      <DraggableCore
-        onStart={() => {
-          this.setState({ isMovingProgress: true });
-        }}
-        onDrag={this.onDragProgressBar}
-        onStop={() => {
-          this.setState({ isMovingProgress: false });
-        }}
-      >
-        <g>
-          <circle
-            cx="100"
-            cy="410"
-            r="5"
-            fill="pink"
-            className="videoProgressAdjusterBall"
-          />
-          <line
-            className="videoProgressAdjusterBar"
-            x1="100"
-            x2="100"
-            y1="410"
-            y2="450"
-            strokeWidth="3"
-            stroke="pink"
-          />
-        </g>
-      </DraggableCore>
-    </g>
-  </g>
-</svg>
-*/

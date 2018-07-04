@@ -29,26 +29,26 @@ export default [
     type: "i",
     subtitle: "By Blender Foundation",
     thumb: "images/ElephantsDream.jpg",
-    title: "Elephant Dream"
+    title: "Img 1"
+  },
+  {
+    description: "Image from picsum",
+    sources: ["https://picsum.photos/1920/1080?image=409"],
+    length: 10,
+    type: "i",
+    subtitle: "By Blender Foundation",
+    thumb: "images/ElephantsDream.jpg",
+    title: "Img 2"
+  },
+  {
+    description: "Image from picsum",
+    sources: ["https://picsum.photos/1920/1080?image=410"],
+    length: 10,
+    type: "i",
+    subtitle: "By Blender Foundation",
+    thumb: "images/ElephantsDream.jpg",
+    title: "Img 3"
   }
-  // {
-  //   description: "Image from picsum",
-  //   sources: ["https://picsum.photos/1920/1080?image=409"],
-  //   length: 10,
-  //   type: "i",
-  //   subtitle: "By Blender Foundation",
-  //   thumb: "images/ElephantsDream.jpg",
-  //   title: "Elephant Dream"
-  // },
-  // {
-  //   description: "Image from picsum",
-  //   sources: ["https://picsum.photos/1920/1080?image=410"],
-  //   length: 10,
-  //   type: "i",
-  //   subtitle: "By Blender Foundation",
-  //   thumb: "images/ElephantsDream.jpg",
-  //   title: "Elephant Dream"
-  // }
   // {
   //   description:
   //     "HBO GO now works with Chromecast -- the easiest way to enjoy online video on your TV. For when you want to settle into your Iron Throne to watch the latest episodes. For $35.\nLearn how to use Chromecast with HBO GO and more at google.com/chromecast.",
